@@ -1,24 +1,20 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState, useEffect } from 'react';
+import Login from './components/Login';
+import KaratePortal from './components/KaratePortal';
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+  const [loggedIn, setLoggedIn] = useState(() => {
+    return localStorage.getItem('gkma_logged_in') === 'true';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('gkma_logged_in', loggedIn ? 'true' : 'false');
+  }, [loggedIn]);
+
+  return loggedIn ? (
+    <KaratePortal onLogout={() => setLoggedIn(false)} />
+  ) : (
+    <Login onLogin={() => setLoggedIn(true)} />
   );
 }
 
