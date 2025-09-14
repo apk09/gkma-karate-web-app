@@ -94,8 +94,8 @@ const FilterBar = ({
         disabled={ageGroupFilter === 'All'}
       />
     </Box>
-    {/* Belt Level Filter */}
-    <FormControl sx={{ minWidth: 140 }} size="small" disabled={minWeight === '' || maxWeight === ''}>
+  {/* Belt Level Filter */}
+  <FormControl sx={{ minWidth: 140 }} size="small">
       <InputLabel id="belt-label">Belt Level</InputLabel>
       <Select
         labelId="belt-label"

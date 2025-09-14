@@ -1,12 +1,53 @@
+
 import React, { useRef, useState, useLayoutEffect } from 'react';
 import { Box, Typography, Button, Paper, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, IconButton, Tooltip } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import * as XLSX from 'xlsx';
 import FilterBar from './FilterBar';
-
 import ParticipantsTable from './ParticipantsTable';
 import PoolGenerator from './PoolGenerator';
+
+// Helper to map belt/rank value to color
+function mapBeltRank(val) {
+  if (typeof val === 'string') {
+    const v = val.trim().toLowerCase();
+    if (v.endsWith('.kyu')) {
+      if (v.startsWith('10')) return 'White';
+      if (v.startsWith('9')) return 'Yellow';
+      if (v.startsWith('8')) return 'Orange';
+      if (v.startsWith('7')) return 'Green';
+      if (v.startsWith('6')) return 'Blue';
+      if (v.startsWith('5')) return 'Purple';
+      if (v.startsWith('4') || v.startsWith('3') || v.startsWith('2') || v.startsWith('1')) return 'Brown';
+    } else if (v.endsWith('.dan')) {
+      return 'Black';
+    } else {
+      const num = parseInt(v, 10);
+      if (!isNaN(num)) {
+        if (num === -10) return 'White';
+        if (num === -9) return 'Yellow';
+        if (num === -8) return 'Orange';
+        if (num === -7) return 'Green';
+        if (num === -6) return 'Blue';
+        if (num === -5) return 'Purple';
+        if ([-4,-3,-2,-1].includes(num)) return 'Brown';
+        if ([1,2,3,4,5].includes(num)) return 'Black';
+      }
+    }
+  } else if (typeof val === 'number') {
+    const num = val;
+    if (num === -10) return 'White';
+    if (num === -9) return 'Yellow';
+    if (num === -8) return 'Orange';
+    if (num === -7) return 'Green';
+    if (num === -6) return 'Blue';
+    if (num === -5) return 'Purple';
+    if ([-4,-3,-2,-1].includes(num)) return 'Brown';
+    if ([1,2,3,4,5].includes(num)) return 'Black';
+  }
+  return val;
+}
 
 
 
@@ -88,9 +129,10 @@ function KaratePortal({ onLogout }) {
     const genderColIdx = columns.findIndex(col => col.toLowerCase().includes('gender'));
     if (genderColIdx !== -1 && genderFilter !== 'All') {
       filtered = filtered.filter(row => {
-        const val = (row[genderColIdx] || '').toString().trim().toUpperCase();
-        if (genderFilter === 'Male') return val === 'M';
-        if (genderFilter === 'Female') return val === 'F';
+        const valRaw = (row[genderColIdx] || '').toString().trim();
+        const val = valRaw.toUpperCase();
+        if (genderFilter === 'Male') return val === 'M' || val === 'MALE';
+        if (genderFilter === 'Female') return val === 'F' || val === 'FEMALE';
         return true;
       });
     }
@@ -160,21 +202,26 @@ function KaratePortal({ onLogout }) {
         return true;
       });
     }
-    // Belt Level
-    const beltColIdx = columns.findIndex(col => col.toLowerCase().includes('belt'));
+    // Belt Level (look for both 'belt' and 'rank' columns)
+    const beltColIdx = columns.findIndex(col => {
+      const c = col.toLowerCase();
+      return c.includes('belt') || c.includes('rank');
+    });
     if (beltColIdx !== -1 && beltFilter !== 'All') {
-      const beginnerBelts = ['white', 'yellow', 'orange'];
-      const advancedBelts = ['brown', 'black'];
-      const intermediateBelts = ['green', 'blue', 'purple', 'maroon', 'red'];
+      const beginnerSet = new Set(['white', 'yellow', 'orange']);
+      const intermediateSet = new Set(['green', 'blue', 'purple']);
+      const advancedSet = new Set(['brown', 'black']);
       filtered = filtered.filter(row => {
-        const belt = (row[beltColIdx] || '').toString().trim().toLowerCase();
+        const raw = row[beltColIdx];
+        if (raw == null) return false;
+        const mapped = mapBeltRank(raw);
+        const mappedLower = mapped && typeof mapped === 'string' ? mapped.toLowerCase() : '';
         if (beltFilter === 'Beginner') {
-          return beginnerBelts.includes(belt);
-        } else if (beltFilter === 'Advanced') {
-          return advancedBelts.includes(belt);
+          return beginnerSet.has(mappedLower);
         } else if (beltFilter === 'Intermediate') {
-          // If not beginner or advanced, treat as intermediate
-          return intermediateBelts.includes(belt) || (!beginnerBelts.includes(belt) && !advancedBelts.includes(belt));
+          return intermediateSet.has(mappedLower);
+        } else if (beltFilter === 'Advanced') {
+          return advancedSet.has(mappedLower);
         }
         return true;
       });
